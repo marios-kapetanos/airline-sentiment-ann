@@ -1,0 +1,15 @@
+__pycache__/
+*.py[codz]
+
+.DS_Store
+__MACOSX/
+
+.ipynb_checkpoints/
+
+.venv/
+venv/
+env/
+
+.env
+
+*.log
