@@ -69,7 +69,7 @@ These metrics provide a more complete view of performance than accuracy alone, e
 airline-sentiment-ann/
 │
 ├── notebooks/
-│   └── airline_sentiment_ann.ipynb
+│   └── airline_sentiment.ipynb
 │
 ├── data/
 │   └── Tweets.csv
