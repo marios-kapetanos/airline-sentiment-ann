@@ -1,4 +1,4 @@
-# Airline Sentiment Classification
+# Airline sentiment classification comparing TF-IDF + ANN, Bi-LSTM with Attention, and fine-tuned DistilBERT.
 
 A Natural Language Processing project developed as part of the **AUEB AI Data Factory – Machine Learning & Data Analysis Bootcamp**.
 
