@@ -1,190 +1,262 @@
-# Airline Sentiment Classification – ANN & Bi-LSTM with Attention
+# Airline Sentiment Classification
 
 A Natural Language Processing project developed as part of the **AUEB AI Data Factory – Machine Learning & Data Analysis Bootcamp**.
 
-The project explores two different neural-network approaches for classifying airline-related tweets into **Negative, Neutral and Positive sentiment classes**:
-
-1. **TF-IDF + Feed-Forward Artificial Neural Network**
-2. **Embedding + Bidirectional LSTM + Attention**
-
-The second approach extends the original classification pipeline by introducing sequence-aware text representation and an attention mechanism.
-
-## Project Overview
-
-The dataset contains tweets about US airlines, with each tweet labeled as:
+The project explores and compares three different approaches for classifying airline-related tweets into three sentiment categories:
 
 - Negative
 - Neutral
 - Positive
 
-The objective is to preprocess the text and compare different neural-network approaches for multi-class sentiment classification.
+The main objective is to examine how different text representations and neural network architectures affect sentiment classification performance.
 
-## Approach 1 – TF-IDF + Feed-Forward ANN
+---
 
-The first model follows a traditional NLP pipeline:
+## Project Overview
 
-**Raw Tweets → Text Preprocessing → TF-IDF → Feed-Forward ANN → Sentiment Prediction**
+The project follows a progressive NLP workflow, moving from traditional text representations to sequential neural networks and finally to pretrained Transformer models.
 
-The workflow includes:
+The three approaches are:
 
-- Exploratory Data Analysis
-- Text cleaning and preprocessing
-- Stratified train / validation / test split
+1. **TF-IDF + Feed-Forward Artificial Neural Network**
+2. **Stacked Bidirectional LSTM with Attention**
+3. **Fine-Tuned DistilBERT Transformer**
+
+This progression provides a practical comparison between:
+
+- Sparse statistical text representations
+- Learned sequential representations
+- Pretrained contextual language representations
+
+---
+
+## 1. TF-IDF + Artificial Neural Network
+
+The first approach represents each tweet using **TF-IDF (Term Frequency–Inverse Document Frequency)** features.
+
+The resulting numerical vectors are passed into a feed-forward Artificial Neural Network for three-class sentiment classification.
+
+### Main Components
+
+- Text preprocessing
 - TF-IDF vectorization
-- PyTorch tensors and DataLoaders
-- Multi-layer feed-forward neural network
+- Stratified train / validation / test split
+- Feed-forward neural network
 - Dropout regularization
+- Early stopping
+- Multi-class classification
+
+### Key Idea
+
+TF-IDF captures the relative importance of words within the dataset and provides a strong baseline for text classification.
+
+However, it does not explicitly model word order or contextual relationships between words.
+
+### Result
+
+The final revised ANN achieved approximately:
+
+**Test Accuracy: ~80.7%**
+
+---
+
+## 2. Bidirectional LSTM with Attention
+
+The second approach treats each tweet as an ordered sequence rather than a fixed TF-IDF feature vector.
+
+The text is converted into token sequences, padded to a fixed length and passed through an embedding layer before being processed by the recurrent neural network.
+
+### Architecture
+
+The model includes:
+
+- Learned word embeddings
+- Two stacked Bidirectional LSTM layers
+- Attention mechanism
+- Dropout regularization
+- Fully connected classification layer
+- Early stopping
+
+### Key Idea
+
+The Bidirectional LSTM processes each tweet in both forward and backward directions, allowing the model to capture sequential context.
+
+The attention mechanism learns to assign greater importance to the most informative token positions when producing the final sentiment prediction.
+
+### Training Behaviour
+
+Training and validation loss were monitored across epochs.
+
+The model showed signs of overfitting after the first few epochs, demonstrating the importance of validation monitoring and early stopping.
+
+### Result
+
+The model achieved approximately:
+
+**Test Accuracy: ~77–78%**
+
+Negative sentiment was classified most effectively, while neutral sentiment remained the most challenging category.
+
+The experiment demonstrated that a more complex neural architecture does not automatically guarantee better generalization.
+
+---
+
+## 3. DistilBERT Fine-Tuning
+
+The third approach uses the pretrained Transformer model:
+
+**`distilbert-base-uncased`**
+
+Instead of learning language representations from scratch, DistilBERT starts with pretrained contextual representations and is fine-tuned for the Airline Tweets sentiment classification task.
+
+### Transformer Tokenization
+
+The DistilBERT tokenizer:
+
+- Converts text into subword tokens
+- Maps tokens to numerical input IDs
+- Adds the special tokens required by the model
+- Generates attention masks
+- Applies padding and truncation
+
+A maximum sequence length of **64 tokens** is used.
+
+Since airline tweets are short-form text, this provides sufficient capacity while keeping training computationally efficient. The slightly larger limit compared with the word-level RNN representation also provides additional room for subword tokenization.
+
+### Fine-Tuning Strategy
+
+The model is fine-tuned end-to-end using:
+
+- AdamW optimizer
+- Learning rate: `2e-5`
+- Linear learning-rate scheduler with warm-up
+- Gradient clipping
+- Maximum of 5 epochs
 - Early stopping based on validation loss
-- Evaluation using multiple classification metrics
-- Confusion matrix analysis
+- Full Transformer fine-tuning
 
-This approach provides a strong baseline using fixed numerical representations of the tweet text.
+Full fine-tuning was selected instead of freezing Transformer layers so that the pretrained representations could adapt directly to the airline sentiment classification task.
 
-## Approach 2 – Bi-LSTM + Attention
+### Preprocessing Consideration
 
-The second model extends the project by using a sequential representation of the tweets instead of TF-IDF.
+The preprocessing procedure from the earlier exercises was retained for consistency across the project.
 
-The pipeline follows:
+Because the selected model is **DistilBERT-base-uncased**, lowercasing is compatible with the pretrained tokenizer.
 
-**Raw Tweets → Text Cleaning → Tokenization → Embedding → Bidirectional LSTM → Attention → Sentiment Prediction**
+However, removing punctuation may discard some sentiment-related information, since punctuation such as exclamation or question marks can carry emotional signal. Preserving more of the original tweet structure could therefore be explored in future experiments.
 
-### Text Processing
+### Training Behaviour
 
-Tweets are cleaned by:
+The best validation loss was:
 
-- Converting text to lowercase
-- Removing URLs
-- Removing user mentions
-- Removing punctuation while preserving hashtag words
-- Normalizing whitespace
+**0.4558 at Epoch 2**
 
-The dataset is split using a stratified **70 / 15 / 15 train-validation-test split**.
+After this point, training loss continued to decrease while validation loss increased, indicating the beginning of overfitting.
 
-The vocabulary is created using the training data only, with:
+Early stopping prevented unnecessary additional training and restored the best-performing model state.
 
-- Minimum token frequency: `2`
-- `<PAD>` token: `0`
-- `<UNK>` token: `1`
-- Maximum sequence length: `50`
+### Test Results
 
-Tweets are encoded into integer sequences and padded or truncated to a fixed length before being passed to the neural network.
+The final DistilBERT model achieved:
 
-## RNN Architecture
+- **Test Loss:** 0.4510
+- **Test Accuracy:** 83.06%
+- **Weighted F1-score:** 0.83
+- **Macro F1-score:** 0.78
 
-The sequence model consists of:
+Class-level F1-scores:
 
-- **Embedding layer:** 128-dimensional word representations
-- **2-layer Bidirectional LSTM**
-- **Hidden size:** 64 units per direction
-- **Dropout:** 0.3
-- **Masked Attention mechanism**
-- Additional dropout before classification
-- **Linear output layer:** 3 sentiment classes
+- **Negative:** 0.90
+- **Neutral:** 0.68
+- **Positive:** 0.76
 
-The bidirectional LSTM processes each tweet in both forward and backward directions, allowing the model to capture contextual information from both sides of each token.
+DistilBERT achieved the strongest overall performance of the three approaches.
 
-The attention mechanism then learns to assign greater importance to the most informative parts of each tweet.
+---
 
-## Model Training
+## Model Comparison
 
-The RNN model is trained using:
+| Model | Text Representation | Test Accuracy | Main Strength |
+|---|---|---:|---|
+| Feed-Forward ANN | TF-IDF | ~80.7% | Strong and computationally efficient baseline |
+| Bi-LSTM + Attention | Learned word embeddings | ~77–78% | Sequential context and attention |
+| DistilBERT | Pretrained contextual representations | **83.06%** | Strong contextual language understanding |
 
-- **Loss:** CrossEntropyLoss
-- **Optimizer:** Adam
-- **Learning rate:** 0.001
-- **Batch size:** 64
-- **Maximum epochs:** 20
-- **Early stopping patience:** 3 epochs
+---
 
-Training and validation loss are monitored after each epoch.
+## Key Learning Outcomes
 
-The model state associated with the **lowest validation loss is saved and restored**, ensuring that the final evaluation uses the best-performing model rather than simply the model from the final training epoch.
+### Traditional NLP Features
 
-## Performance Evaluation
+TF-IDF provides a strong baseline for sentiment classification and demonstrates that relatively simple representations can perform effectively on structured text classification tasks.
 
-Both approaches are evaluated using:
+### Sequential Deep Learning
 
-- Accuracy
-- Precision
-- Recall
-- F1 Score
-- Confusion Matrix
-- Training and validation loss curves
+The Bi-LSTM experiment demonstrates how recurrent neural networks can model word order and sequential context.
 
-These metrics provide a more complete view of model performance, particularly because sentiment classes may not be evenly distributed.
+The attention mechanism additionally provides a way for the model to emphasize more informative parts of the input sequence.
 
-## Model Development Strategy
+The experiment also illustrates that increasing architectural complexity does not necessarily guarantee improved generalization.
 
-The project demonstrates a progression from a traditional text-classification pipeline to a sequence-based deep-learning architecture.
+### Transfer Learning in NLP
 
-### Model 1
+DistilBERT produced the strongest results by leveraging pretrained contextual language representations.
 
-**TF-IDF → Feed-Forward ANN**
+Instead of learning the structure of language solely from the Airline Tweets dataset, the Transformer begins with previously learned linguistic knowledge and adapts it to the specific sentiment classification task through fine-tuning.
 
-This approach represents each tweet as a fixed TF-IDF feature vector.
+This demonstrates the practical value of transfer learning in modern Natural Language Processing.
 
-### Model 2
-
-**Embedding → Bidirectional LSTM → Attention**
-
-This approach preserves token order and allows the model to learn contextual relationships between words.
-
-Validation-loss monitoring and early stopping were used to control overfitting and identify the best training epoch.
-
-## Technologies Used
-
-- Python
-- Jupyter Notebook
-- Pandas
-- NumPy
-- Matplotlib
-- Seaborn
-- Scikit-learn
-- PyTorch
+---
 
 ## Repository Structure
 
 ```text
-airline-sentiment-ann/
+airline-sentiment-classification/
 │
 ├── notebooks/
-│   ├── airline_sentiment.ipynb
-│   └── airline_rnn.ipynb
+│   ├── 01_airline_sentiment.ipynb
+│   ├── 02_airline_rnn.ipynb
+│   └── 03_airline_sentiment_transformer.ipynb
 │
 ├── data/
-│   └── Tweets.csv
-│
-├── README.md
+├── .gitignore
 ├── requirements.txt
-└── .gitignore
+└── README.md
 ```
 
-## Key Learning Outcomes
+---
 
-Through this project I gained hands-on experience with:
+## Technologies
 
-- Preparing textual data for machine learning and deep learning
-- Applying TF-IDF vectorization for text classification
-- Creating vocabularies and encoded text sequences
-- Using embedding layers to learn word representations
-- Building feed-forward neural networks with PyTorch
-- Building multi-layer Bidirectional LSTM networks
-- Implementing an attention mechanism for sequence classification
-- Creating training, validation and testing workflows
-- Monitoring validation loss across epochs
-- Applying early stopping to reduce overfitting
-- Restoring the best-performing model based on validation performance
-- Evaluating multi-class classification using Accuracy, Precision, Recall and F1 Score
-- Comparing traditional NLP representations with sequence-based neural-network approaches
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- PyTorch
+- Hugging Face Transformers
+- Matplotlib
+- Jupyter Notebook
+
+---
 
 ## Future Improvements
 
-Possible extensions of the project include:
+Potential extensions of the project include:
 
-- Compare TF-IDF with pretrained Word2Vec or FastText embeddings
-- Use pretrained word embeddings in the recurrent neural network
-- Experiment with different LSTM architectures and hidden dimensions
-- Explore GRU-based architectures
-- Apply more advanced techniques for class imbalance
-- Perform systematic hyperparameter optimization
-- Compare the neural-network approaches with transformer-based NLP models
+- Preserving more of the original tweet structure during Transformer preprocessing
+- Comparing additional pretrained models such as BERT and RoBERTa
+- Exploring class-weighted Transformer training
+- Experimenting with frozen Transformer layers and gradual unfreezing
+- Hyperparameter optimization
+- More detailed error analysis of neutral and positive tweets
+- Comparing alternative sequence lengths and batch sizes
+- Using pretrained embeddings such as GloVe or fastText for the RNN model
+- Deploying the best-performing model through a sentiment prediction API or simple web application
+
+---
+
+## Author
+
+**Marios Kapetanos**
+
+Project developed as part of the **AUEB AI Data Factory – Machine Learning & Data Analysis Bootcamp**.
